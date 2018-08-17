@@ -1143,7 +1143,17 @@ namespace Simd
     {
         SIMD_INLINE v128_u8 ShiftLeft(v128_u8 value, size_t shift)
         {
+#if defined (__LITTLE_ENDIAN__)
+            shift &= 0xF;
+            // See https://github.com/gcc-mirror/gcc/blob/master/gcc/config/rs6000/emmintrin.h
+            if (__builtin_constant_p(shift)) {
+                return vec_sld(value, K8_00, shift);
+            } else {
+                return vec_slo(value, vec_splats((unsigned char)(shift * 8)));
+            }
+#else
             return vec_perm(K8_00, value, vec_lvsr(shift, (uint8_t*)0));
+#endif
         }
 
         SIMD_INLINE v128_u16 ShiftLeft(v128_u16 value, size_t shift)
@@ -1153,7 +1163,18 @@ namespace Simd
 
         SIMD_INLINE v128_u8 ShiftRight(v128_u8 value, size_t shift)
         {
+#if defined (__LITTLE_ENDIAN__)
+            // See https://github.com/gcc-mirror/gcc/blob/master/gcc/config/rs6000/emmintrin.h
+            if (__builtin_constant_p(shift)) {
+                shift = (16 - shift & 0xF) & 0xF;
+                return vec_sld(K8_00, value, shift);
+            } else {
+                shift &= 0xF;
+                return vec_sro(value, vec_splats((unsigned char)(shift * 8)));
+            }
+#else
             return vec_perm(value, K8_00, vec_lvsl(shift, (uint8_t*)0));
+#endif
         }
 
         SIMD_INLINE v128_u16 MulHiU16(v128_u16 a, v128_u16 b)

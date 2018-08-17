@@ -607,9 +607,13 @@ namespace Simd
 
         template <> SIMD_INLINE v128_u8 Load<false>(const uint8_t * p)
         {
+#ifdef __LITTLE_ENDIAN__
+            return vec_vsx_ld(0, p);
+#else
             v128_u8 lo = vec_ld(0, p);
             v128_u8 hi = vec_ld(A, p);
             return vec_perm(lo, hi, vec_lvsl(0, p));
+#endif
         }
 
         template <> SIMD_INLINE v128_u8 Load<true>(const uint8_t * p)
@@ -715,18 +719,28 @@ namespace Simd
             template <class T> SIMD_INLINE Loader(const T * ptr)
                 :_ptr((const uint8_t*)ptr)
             {
+#ifndef __LITTLE_ENDIAN__
                 _perm = vec_lvsl(0, _ptr);
+#endif
             }
 
             SIMD_INLINE v128_u8 First() const
             {
+#ifdef __LITTLE_ENDIAN__
+                return vec_vsx_ld(0, _ptr);
+#else
                 return vec_perm(vec_ld(0, _ptr), vec_ld(A, _ptr), _perm);
+#endif
             }
 
             SIMD_INLINE v128_u8 Next() const
             {
                 _ptr += A;
+#ifdef __LITTLE_ENDIAN__
+                return vec_vsx_ld(0, _ptr);
+#else
                 return vec_perm(vec_ld(0, _ptr), vec_ld(A, _ptr), _perm);
+#endif
             }
 
         private:

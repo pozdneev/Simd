@@ -293,6 +293,9 @@ namespace Simd
 
         template <> SIMD_INLINE void Store<false>(uint8_t * p, v128_u8 a)
         {
+#ifdef __LITTLE_ENDIAN__
+            vec_vsx_st(a, 0, p);
+#else
             v128_u8 lo = vec_ld(0, p);
             v128_u8 hi = vec_ld(A, p);
             v128_u8 perm = vec_lvsr(0, p);
@@ -300,6 +303,7 @@ namespace Simd
             v128_u8 value = vec_perm(a, a, perm);
             vec_st(vec_sel(lo, value, mask), 0, p);
             vec_st(vec_sel(value, hi, mask), A, p);
+#endif
         }
 
         template <> SIMD_INLINE void Store<true>(uint8_t * p, v128_u8 a)
@@ -360,30 +364,42 @@ namespace Simd
             template <class T> SIMD_INLINE Storer(T * ptr)
                 :_ptr((uint8_t*)ptr)
             {
+#ifndef __LITTLE_ENDIAN__
                 _perm = vec_lvsr(0, _ptr);
                 _mask = vec_perm(K8_00, K8_FF, _perm);
+#endif
             }
 
             template <class T> SIMD_INLINE void First(T value)
             {
+#ifdef __LITTLE_ENDIAN__
+                vec_vsx_st((v128_u8)value, 0, _ptr);
+#else
                 _last = (v128_u8)value;
                 v128_u8 background = vec_ld(0, _ptr);
                 v128_u8 foreground = vec_perm(_last, _last, _perm);
                 vec_st(vec_sel(background, foreground, _mask), 0, _ptr);
+#endif
             }
 
             template <class T> SIMD_INLINE void Next(T value)
             {
                 _ptr += A;
+#ifdef __LITTLE_ENDIAN__
+                vec_vsx_st((v128_u8)value, 0, _ptr);
+#else
                 vec_st(vec_perm(_last, (v128_u8)value, _perm), 0, _ptr);
                 _last = (v128_u8)value;
+#endif
             }
 
             SIMD_INLINE void Flush()
             {
+#ifndef __LITTLE_ENDIAN__
                 v128_u8 background = vec_ld(A, _ptr);
                 v128_u8 foreground = vec_perm(_last, _last, _perm);
                 vec_st(vec_sel(foreground, background, _mask), A, _ptr);
+#endif
             }
 
         private:

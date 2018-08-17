@@ -81,7 +81,11 @@ namespace Simd
             if (align)
                 assert(Aligned(dst) && Aligned(stride));
 
+#ifdef __LITTLE_ENDIAN__
+            uint32_t bgra32 = uint32_t(blue) | (uint32_t(green) << 8) | (uint32_t(red) << 16) | (uint32_t(alpha) << 24);
+#else
             uint32_t bgra32 = uint32_t(alpha) | (uint32_t(red) << 8) | (uint32_t(green) << 16) | (uint32_t(blue) << 24);
+#endif
 
             size_t alignedWidth = AlignLo(width, 4);
             v128_u8 bgra128 = (v128_u8)SetU32(bgra32);

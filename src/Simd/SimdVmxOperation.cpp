@@ -249,7 +249,6 @@ namespace Simd
                 assert(Aligned(horizontal) && Aligned(dst) && Aligned(stride));
 
             size_t alignedWidth = Simd::AlignLo(width, A);
-            size_t fullAlignedWidth = Simd::AlignLo(width, QA);
             for (size_t row = 0; row < height; ++row)
             {
                 v128_u16 _vertical = SetU16(vertical[row]);
@@ -258,13 +257,11 @@ namespace Simd
                     size_t col = 0;
                     for (; col < alignedWidth; col += QA)
                     {
-                        VectorProduct<true>(_vertical, horizontal, col, dst);
-                        VectorProduct<true>(_vertical, horizontal, col + A, dst);
+                        VectorProduct<true>(_vertical, horizontal, col + 0 * A, dst);
+                        VectorProduct<true>(_vertical, horizontal, col + 1 * A, dst);
                         VectorProduct<true>(_vertical, horizontal, col + 2 * A, dst);
                         VectorProduct<true>(_vertical, horizontal, col + 3 * A, dst);
                     }
-                    for (; col < alignedWidth; col += A)
-                        VectorProduct<true>(_vertical, horizontal, col, dst);
                 }
                 else
                 {

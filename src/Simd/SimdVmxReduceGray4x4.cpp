@@ -66,12 +66,17 @@ namespace Simd
             return vec_mladd(vec_add(b, c), K16_0003, vec_add(a, d));
         }
 
+#ifdef __LITTLE_ENDIAN__
+        const v128_u8 K8_BENOMIAL = SIMD_VEC_SETR_EPI8(0x3, 0x1, 0x1, 0x3, 0x3, 0x1, 0x1, 0x3, 0x3, 0x1, 0x1, 0x3, 0x3, 0x1, 0x1, 0x3);
+#else
         const v128_u8 K8_BENOMIAL = SIMD_VEC_SETR_EPI8(0x1, 0x3, 0x3, 0x1, 0x1, 0x3, 0x3, 0x1, 0x1, 0x3, 0x3, 0x1, 0x1, 0x3, 0x3, 0x1);
+#endif
 
         SIMD_INLINE v128_u16 BinomialSum16(const v128_u8 & ab, const v128_u8 & cd)
         {
             v128_u32 lo = vec_msum((v128_u8)UnpackLoU16((v128_u16)cd, (v128_u16)ab), K8_BENOMIAL, K32_00000000);
             v128_u32 hi = vec_msum((v128_u8)UnpackHiU16((v128_u16)cd, (v128_u16)ab), K8_BENOMIAL, K32_00000000);
+
             return vec_pack(lo, hi);
         }
 
@@ -107,6 +112,7 @@ namespace Simd
 
         template <bool align> SIMD_INLINE v128_u16 ReduceRow16(const Buffer & buffer, size_t offset)
         {
+            // TODO(avp): Remove vec_and()
             return vec_and(DivideBy64(BinomialSum16(
                 Load<align>(buffer.src0 + offset), Load<align>(buffer.src1 + offset),
                 Load<align>(buffer.src2 + offset), Load<align>(buffer.src3 + offset))), K16_00FF);

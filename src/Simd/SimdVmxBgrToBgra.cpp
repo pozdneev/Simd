@@ -88,7 +88,11 @@ namespace Simd
                 BgrToBgra<false>(bgr, width, height, bgrStride, bgra, bgraStride, alpha);
         }
 
+#ifdef __LITTLE_ENDIAN__
+        const v128_u8 K8_PERM_48 = SIMD_VEC_SETR_EPI8(0x00, 0x10, 0x02, 0x12, 0x04, 0x14, 0x06, 0x16, 0x08, 0x18, 0x0A, 0x1A, 0x0C, 0x1C, 0x0E, 0x1E);
+#else
         const v128_u8 K8_PERM_48 = SIMD_VEC_SETR_EPI8(0x01, 0x11, 0x03, 0x13, 0x05, 0x15, 0x07, 0x17, 0x09, 0x19, 0x0B, 0x1B, 0x0D, 0x1D, 0x0F, 0x1F);
+#endif
 
         template <bool align, bool first>
         SIMD_INLINE void Bgr48pToBgra32(const uint8_t * blue, const uint8_t * green, const uint8_t * red, size_t offset,
@@ -101,8 +105,13 @@ namespace Simd
             v128_u16 bg = (v128_u16)vec_perm(_blue, _green, K8_PERM_48);
             v128_u16 ra = (v128_u16)vec_perm(_red, alpha, K8_PERM_48);
 
+#ifdef __LITTLE_ENDIAN__
+            Store<align, first>(bgra, (v128_u8)UnpackLoU16(bg, ra));
+            Store<align, false>(bgra, (v128_u8)UnpackHiU16(bg, ra));
+#else
             Store<align, first>(bgra, (v128_u8)UnpackLoU16(ra, bg));
             Store<align, false>(bgra, (v128_u8)UnpackHiU16(ra, bg));
+#endif
         }
 
         template <bool align> void Bgr48pToBgra32(const uint8_t * blue, size_t blueStride, size_t width, size_t height,
